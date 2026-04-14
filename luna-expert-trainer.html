@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Luna — Spirituality Expert Trainer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d0820;font-family:'Segoe UI',system-ui,sans-serif;color:#e8dff5}
+@keyframes twinkle{from{opacity:.1}to{opacity:.8}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+@keyframes dot{0%,100%{opacity:.3}50%{opacity:1}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+@keyframes pop{0%{transform:scale(.8);opacity:0}100%{transform:scale(1);opacity:1}}
+.fade-up{animation:fadeUp .4s ease forwards}
+.fade-in{animation:fadeIn .5s ease forwards}
+.slide-in{animation:slideIn .35s ease forwards}
+.pop{animation:pop .3s ease forwards}
+textarea:focus,input:focus{outline:none}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:rgba(180,130,255,.3);border-radius:4px}
+::-webkit-scrollbar-track{background:transparent}
+.mode-card:hover{transform:translateY(-4px)!important;border-color:rgba(192,132,252,.5)!important}
+.mode-card{transition:all .25s ease}
+.persona-card:hover{transform:translateY(-3px)!important;border-color:rgba(192,132,252,.5)!important}
+.persona-card{transition:all .25s ease;cursor:pointer}
+.btn-primary:hover{filter:brightness(1.15);transform:scale(1.03)}
+.btn-primary{transition:all .2s}
+.btn-ghost:hover{background:rgba(155,89,255,.2)!important}
+.btn-ghost{transition:all .2s}
+.quiz-opt:hover{border-color:rgba(192,132,252,.6)!important;background:rgba(155,89,255,.15)!important}
+.quiz-opt{transition:all .2s;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useRef,useEffect,useCallback}=React;
+
+/* ── COLOURS ── */
+const C={
+  bg:"linear-gradient(135deg,#0d0820 0%,#1a0e3a 45%,#0d1a2e 100%)",
+  card:"rgba(13,8,32,.75)",
+  border:"rgba(180,130,255,.2)",
+  purple:"#9b59ff",
+  lavender:"#c084fc",
+  text:"#e8dff5",
+  muted:"rgba(212,184,255,.55)",
+  feedback:"rgba(251,191,36,.08)",
+  feedbackBorder:"rgba(251,191,36,.3)",
+};
+
+/* ── STARS ── */
+const STARS=Array.from({length:32},(_,i)=>({id:i,top:Math.random()*100,left:Math.random()*100,size:1+Math.random()*1.8,op:.15+Math.random()*.5,dur:2+Math.random()*4}));
+
+/* ══════════════════════════════════════════
+   KNOWLEDGE HUB DATA
+══════════════════════════════════════════ */
+const KB=[
+  {keys:["beginner crystal","start crystal","first crystal","which crystal","best crystal","crystal for"],
+   answer:`🔮 **Crystals for Beginners**\n\n**Clear Quartz** — The "Master Healer." Amplifies any intention — a perfect all-rounder.\n\n**Amethyst** — Calming & intuition-enhancing. Excellent for sleep and meditation.\n\n**Black Tourmaline** — Protection from negative energy. Essential for empaths.\n\n**Rose Quartz** — Stone of self-love and heart healing.\n\n**Citrine** — Abundance, positivity, and manifestation energy.\n\n💡 *Pro tip:* Ethical sourcing matters deeply to today's buyers. Always know your supply chain.`},
+  {keys:["cleanse crystal","clean crystal","charge crystal","cleansing","charging crystal"],
+   answer:`🌙 **Cleansing & Charging Crystals**\n\n**Moonlight** — Full moon overnight. Safe for all stones.\n**Smoke / Smudging** — Palo santo or sage. Deeply ceremonial.\n**Sound** — Singing bowl or tuning fork. Zero risk method.\n**Earth Burial** — 24–48 hours in soil for grounding stones.\n**Dry Salt** — A few hours in Himalayan salt (never water-soluble stones).\n\n⚠️ *Never use water with:* selenite, malachite, pyrite, celestite — they dissolve or rust.\n\n**Charging:** Hold stone → set clear intention → visualize light filling it.`},
+  {keys:["tarot","tarot deck","tarot card","major arcana","minor arcana"],
+   answer:`🃏 **Tarot Essentials**\n\nTarot is a 78-card system: 22 Major Arcana (life themes) + 56 Minor Arcana (day-to-day).\n\n**Best starter decks:**\n- **Rider-Waite-Smith** — The classic. Most books reference it.\n- **Modern Witch Tarot** — Inclusive, contemporary update of Rider-Waite.\n- **Wild Unknown** — Minimalist animal imagery, very popular aesthetically.\n\n**Practice tips:** One card daily, journal your interpretations, look for recurring suits.\n\n💡 *Marketplace note:* Indie artist decks on Etsy command premium prices and create loyal communities.`},
+  {keys:["oracle","oracle card","oracle vs tarot"],
+   answer:`✨ **Oracle vs. Tarot**\n\n**Tarot:** Fixed 78-card system. Higher learning curve but deep symbolic richness.\n**Oracle:** Creator-defined, no fixed rules. More accessible and intuitive.\n\n**Top oracle decks to know:**\n- The Universe Has Your Back — Gabrielle Bernstein\n- Moonology Oracle — Yasmin Boland\n- Work Your Light Oracle — Rebecca Campbell\n- Wisdom of the Oracle — Colette Baron-Reid\n\n💡 *Teaching tip:* Recommend oracle cards to beginners to build intuition, then introduce tarot when they're ready for structure.`},
+  {keys:["astrology","birth chart","rising sign","moon sign","sun sign","zodiac","natal chart"],
+   answer:`⭐ **Astrology Fundamentals**\n\n**The Big Three in every client's chart:**\n☀️ **Sun Sign** — Core identity and life purpose\n🌙 **Moon Sign** — Emotional world and inner needs\n⬆️ **Rising/Ascendant** — First impression; how others see you\n\n**Key planets to know:** Venus (love & values), Mars (drive & action), Mercury (communication), Saturn (lessons & discipline).\n\n**Marketplace opportunities:** Zodiac crystal kits, personalised birth chart readings, moon phase planners, and astrology-based journals are top sellers.`},
+  {keys:["chakra","chakras","energy center","root","sacral","solar plexus","heart chakra","throat","third eye","crown"],
+   answer:`🌈 **The 7 Chakras**\n\n🔴 **Root** — Grounding, safety | Crystals: black tourmaline, hematite\n🟠 **Sacral** — Creativity, pleasure | Crystals: carnelian, orange calcite\n🟡 **Solar Plexus** — Confidence, power | Crystals: citrine, tiger's eye\n💚 **Heart** — Love, compassion | Crystals: rose quartz, green aventurine\n🔵 **Throat** — Expression, truth | Crystals: blue lace agate, aquamarine\n🟣 **Third Eye** — Intuition, vision | Crystals: amethyst, lapis lazuli\n⚪ **Crown** — Consciousness, divine | Crystals: clear quartz, selenite\n\n💡 *Best seller format:* 7-piece chakra crystal sets with meaning cards.`},
+  {keys:["reiki","energy healing","energy work","life force","prana"],
+   answer:`🙌 **Reiki & Energy Healing**\n\nReiki channels universal life force ("Ki") through the practitioner's hands to remove energetic blockages.\n\n**3 Training Levels:**\n1. **Shoden** — Self-healing, hands-on basics\n2. **Okuden** — Distance healing, sacred symbols\n3. **Shinpiden (Master)** — Ability to attune others\n\n**Related modalities to understand:** Crystal healing, sound healing (tuning forks), aromatherapy, pranic healing, theta healing.\n\n💡 *Business tip:* Bundling a Reiki session with a crystal kit + guided meditation audio dramatically increases average order value and client retention.`},
+  {keys:["meditation","meditate","mindfulness","breathwork","daily practice"],
+   answer:`🧘 **Meditation for Practitioners**\n\n**Types your clients will ask about:**\n- **Candle gazing (Trataka)** — Focus & third eye activation\n- **Mantra** — "So Hum," om chanting, mala beads (108 repetitions)\n- **4-7-8 Breathwork** — Instant nervous system regulation\n- **Sound bath** — Singing bowls, 432Hz music, binaural beats\n- **Crystal-assisted** — Stones placed on chakra points\n\n**Starter advice for clients:** 5 minutes daily beats 30 minutes occasionally. Habit-stack it (morning tea + meditation).\n\n💡 *Products that sell:* Mala beads, meditation cushions, singing bowl sets, guided audio subscriptions.`},
+  {keys:["marketplace","business","sell","shop","store","product","etsy","brand","entrepreneur"],
+   answer:`🛍️ **Spiritual Marketplace Strategy**\n\n**Top-selling product categories:**\n🔮 Crystals & gemstone jewellery\n🕯️ Intention & chakra candles\n🃏 Tarot & oracle decks\n🌿 Smudge bundles, ritual teas\n📿 Mala beads & spiritual jewellery\n📚 Guided journals & workbooks\n\n**Platform guide:**\n- **Etsy** — Built-in spiritual buyer community, great for artisan products\n- **Shopify** — Full brand control for scaling\n- **TikTok Shop** — Fastest growing channel for crystals & candles\n\n**What top sellers do differently:**\n✅ Lead with education (crystal guides, how-to videos)\n✅ Transparent ethical sourcing\n✅ Bundle kits + subscription boxes\n✅ Build community, not just a store`},
+];
+
+function getKBAnswer(q){
+  const l=q.toLowerCase();
+  for(const e of KB) if(e.keys.some(k=>l.includes(k))) return e.answer;
+  return `✨ Great question for a practitioner to explore!\n\nCould you be more specific? For example, are you asking about:\n- A particular crystal, stone, or modality?\n- A client scenario or objection you've encountered?\n- Business or marketplace strategy?\n\nThe more specific your question, the more precise my guidance. 🌙`;
+}
+
+/* ══════════════════════════════════════════
+   CLIENT SIMULATOR PERSONAS
+══════════════════════════════════════════ */
+const PERSONAS=[
+  {id:"beginner",emoji:"🌱",name:"The Beginner",tagline:"First steps into spirituality",difficulty:"Starter",color:"#4ade80",
+   opening:"Hi! I've been feeling drawn to crystals lately but honestly I don't know where to start. It feels a bit overwhelming. Do you think they actually work?",
+   script:[
+     {trigger:["work","real","science","proof","believe"],
+      client:"That makes sense. I guess I'm a bit sceptical but also really curious. What would you actually suggest I buy first?",
+      tip:"When a client is sceptical, validate their curiosity without overselling. Frame crystals as tools for intention-setting and mindfulness rather than magic."},
+     {trigger:["amethyst","quartz","rose quartz","tourmaline","citrine","crystal"],
+      client:"Oh those sound beautiful. Where is the best place to buy them? And how do I know I'm not getting a fake?",
+      tip:"Great job naming specific stones! Always follow crystal recommendations with sourcing guidance — this builds trust and positions you as a marketplace authority."},
+     {trigger:["etsy","shop","store","buy","purchase","source","authentic"],
+      client:"I didn't know that! One more thing — my friend mentioned I need to 'cleanse' crystals when I get them. What does that mean?",
+      tip:"Excellent! Addressing authenticity concerns is key for beginners. You've opened a natural door to the topic of cleansing — follow the thread."},
+     {trigger:["cleanse","clean","moon","smoke","sound","salt","energy"],
+      client:"Wow, I love the moonlight idea! This has been so helpful. I feel much more confident. Thank you so much!",
+      tip:"Perfect closing sequence. You guided the client from scepticism → product recommendation → sourcing → care ritual. That's a complete beginner journey!"},
+   ],
+   fallback:{client:"That's interesting. Could you tell me a little more about what that means for someone just starting out?",
+             tip:"When a client seems unsure, invite elaboration. Asking 'what does that mean for me?' is a common beginner response — always bring answers back to their personal experience."}
+  },
+  {id:"seeker",emoji:"💔",name:"The Seeker",tagline:"Seeking healing after loss",difficulty:"Intermediate",color:"#f472b6",
+   opening:"I recently went through a painful breakup and a friend suggested I explore crystals or energy healing. I'm not sure where to start — I just want to feel better.",
+   script:[
+     {trigger:["sorry","hear","understand","heal","pain","heart","loss","difficult","hard","challenging"],
+      client:"Thank you for saying that. I've been really struggling. Someone mentioned rose quartz — is that actually going to help me?",
+      tip:"Empathy first, always. When a client is in emotional pain, acknowledging their experience before offering solutions builds the trust that makes your guidance land."},
+     {trigger:["rose quartz","heart chakra","green aventurine","rhodonite","malachite","crystal","stone"],
+      client:"That feels right. I've also heard about Reiki. Could that help with emotional healing? I don't really know what it is.",
+      tip:"You connected the crystal to the emotion beautifully. Transitioning to Reiki here is natural — the client is open and curious about energy work."},
+     {trigger:["reiki","energy","healing","session","practitioner","flow","blockage"],
+      client:"I'd love to try that. Should I also try meditation? I've never been able to sit still for long.",
+      tip:"Great Reiki explanation. For emotionally vulnerable clients, always mention that multiple modalities work together — it helps them feel supported on multiple levels."},
+     {trigger:["meditation","breathwork","start","minutes","simple","guided","easy","practice"],
+      client:"5 minutes sounds manageable. I really appreciate this. I feel like I have a real path forward now. Thank you.",
+      tip:"Excellent! You offered a realistic, non-overwhelming entry point. For seekers in pain, small achievable steps are far more powerful than grand recommendations."},
+   ],
+   fallback:{client:"I appreciate that. But I'm feeling quite fragile right now — can you help me understand what would be the gentlest place to start?",
+             tip:"Seekers in emotional pain need gentle, step-by-step guidance. When in doubt, return to the heart chakra, self-compassion, and low-barrier practices like breathwork."}
+  },
+  {id:"collector",emoji:"🔮",name:"The Collector",tagline:"Building a serious crystal collection",difficulty:"Intermediate",color:"#a78bfa",
+   opening:"I already have about 30 crystals but I want to build a really intentional collection. I know the basics — what would you say are the must-have stones a serious practitioner should own?",
+   script:[
+     {trigger:["labradorite","moldavite","selenite","obsidian","kyanite","tourmaline","phantom","lemurian","advanced","rare"],
+      client:"I have most of those. What about Moldavite? I keep hearing it's intense — is it worth it for an intermediate collector?",
+      tip:"Advanced collectors want advanced knowledge. Don't talk down to them. Naming specific lesser-known stones signals your expertise and earns their respect."},
+     {trigger:["moldavite","transformation","powerful","intense","high vibration","tektite","meteorite"],
+      client:"That's fascinating. I also want to organise my collection better — do you have advice on storing and displaying crystals?",
+      tip:"Excellent Moldavite insight. You addressed both its power and its risks — that nuanced response is exactly what serious collectors trust practitioners for."},
+     {trigger:["store","display","sunlight","amethyst","fade","velvet","wooden","organise","grid","altar"],
+      client:"Great tips! Last question — I'm thinking of starting a small crystal business. What's the most important thing to know about sourcing?",
+      tip:"Good practical advice on storage. You've built enough rapport that the client is now opening up about business ambitions — a sign of deep trust."},
+     {trigger:["source","ethical","mine","supplier","origin","certif","direct","fair","trace"],
+      client:"That's really valuable. I feel like I've learned more in this conversation than in months of reading. You clearly know your stuff.",
+      tip:"Outstanding finish! You addressed ethical sourcing — a topic serious collectors care deeply about. This response would convert a collector into a long-term client."},
+   ],
+   fallback:{client:"Interesting perspective. Can you go deeper on that? I like to really understand the 'why' behind recommendations.",
+             tip:"Collectors are detail-oriented. When they push back, lean into specifics: crystal formation, metaphysical properties, historical use. Depth = credibility."}
+  },
+  {id:"entrepreneur",emoji:"💼",name:"The Entrepreneur",tagline:"Launching a spiritual products business",difficulty:"Advanced",color:"#fbbf24",
+   opening:"I'm launching a spiritual products brand online. I want to stand out in a crowded market. What's your honest take on what makes a spiritual marketplace business succeed?",
+   script:[
+     {trigger:["authentic","story","brand","community","education","content","trust","niche","speciali"],
+      client:"I like the authenticity angle. But practically, which platform should I start on — Etsy, Shopify, or something else?",
+      tip:"Smart opener. Spiritual entrepreneurs are savvy — they want strategic insight, not surface advice. Authenticity + niche positioning is the right answer."},
+     {trigger:["etsy","shopify","tiktok","instagram","platform","start","traffic","audience","social"],
+      client:"That makes sense. What about product sourcing? Everyone seems to source from the same places. How do I differentiate?",
+      tip:"Good platform strategy. Always recommend starting where buyers already are (Etsy/TikTok) before investing in owned infrastructure. That sequencing matters."},
+     {trigger:["source","direct","mine","supplier","artisan","ethical","certif","fair trade","unique","exclusive"],
+      client:"Direct sourcing sounds expensive upfront. How do I price my products to stay competitive but still be profitable?",
+      tip:"Excellent. You positioned ethical sourcing as a differentiator, not just a cost. This mindset shift is what separates serious brands from commodity sellers."},
+     {trigger:["price","margin","value","bundle","premium","position","cost","profit","markup"],
+      client:"This is gold. You've given me a real roadmap. I'm going to act on this immediately. Thank you!",
+      tip:"Perfect pricing framework. You covered value-based pricing, bundles, and premium positioning. An entrepreneur needs numbers AND strategy — you delivered both."},
+   ],
+   fallback:{client:"That's a start, but I need more specifics. I'm thinking about this from a business growth perspective — can you give me something more tactical?",
+             tip:"Entrepreneurs want ROI-focused answers. When they push back, get tactical: conversion rates, platform algorithms, product bundling, email list building. Vague advice loses them."}
+  },
+  {id:"skeptic",emoji:"🤔",name:"The Skeptic",tagline:"Curious but needs convincing",difficulty:"Advanced",color:"#60a5fa",
+   opening:"My partner dragged me to a crystal shop and now I'm here. Honestly, I'm not convinced any of this is real. Is there actual evidence that crystals or energy healing does anything?",
+   script:[
+     {trigger:["science","study","research","evidence","placebo","mindful","intention","mind","psychology","tool"],
+      client:"OK, the mindfulness angle I can get behind. But what about people claiming crystals 'vibrate' and 'emit energy' — isn't that just nonsense?",
+      tip:"Well handled. Never get defensive with sceptics. Bridging to mindfulness, psychology, and intention-setting is far more effective than debating metaphysics."},
+     {trigger:["vibration","frequency","metaphor","belief","meaning","focus","intention","symbol","placebo","open"],
+      client:"Fair enough, I'll grant you that. So hypothetically, if I were to try one thing — just one — what would you suggest for a total non-believer?",
+      tip:"Excellent nuanced response. You validated their scepticism while explaining how symbolic tools create real psychological effects. That's intellectually honest coaching."},
+     {trigger:["meditation","breathwork","clear quartz","amethyst","grounding","walk","nature","simple","low commitment"],
+      client:"That actually sounds fine. Not too weird. Maybe I'd try that. Is there anything I can read that approaches this from a less 'woo-woo' angle?",
+      tip:"Perfect recommendation — low barrier, evidence-adjacent, non-threatening. You met the sceptic exactly where they are rather than where you want them to be."},
+     {trigger:["book","read","science","research","author","recommend","psychology","mind","Dr","professor"],
+      client:"Interesting. I didn't expect to find this conversation actually useful. Maybe I'll give it a try.",
+      tip:"Exceptional handling of the sceptic! You guided them from dismissal to genuine curiosity by staying grounded, intellectually honest, and never overselling. That's mastery."},
+   ],
+   fallback:{client:"I'm not sure I'm buying that. Can you give me a more grounded, rational explanation?",
+             tip:"Sceptics respect honesty. If a response feels too metaphysical, immediately ground it in psychology, habit formation, or the science of ritual and meaning-making."}
+  },
+];
+
+/* ══════════════════════════════════════════
+   QUIZ DATA
+══════════════════════════════════════════ */
+const QUIZ=[
+  {q:"Which crystal is known as the 'Master Healer' and amplifies the energy of other stones?",opts:["Amethyst","Clear Quartz","Selenite","Labradorite"],ans:1},
+  {q:"What is the correct order of the 7 chakras from bottom to top?",opts:["Root, Sacral, Solar Plexus, Heart, Throat, Third Eye, Crown","Root, Heart, Sacral, Throat, Solar Plexus, Third Eye, Crown","Crown, Third Eye, Throat, Heart, Solar Plexus, Sacral, Root","Sacral, Root, Solar Plexus, Heart, Crown, Throat, Third Eye"],ans:0},
+  {q:"Why should you NEVER cleanse malachite, selenite or celestite with water?",opts:["Water dulls their colour permanently","They are water-soluble or can rust/dissolve","Water amplifies their energy too strongly","They absorb negative energy from tap water"],ans:1},
+  {q:"A tarot deck has how many cards in total?",opts:["52","72","78","88"],ans:2},
+  {q:"What does 'Reiki' translate to in English?",opts:["Healing hands","Universal life energy","Sacred light","Spirit force"],ans:1},
+  {q:"Which crystal is most associated with the Third Eye chakra and intuition?",opts:["Citrine","Rose Quartz","Amethyst","Black Tourmaline"],ans:2},
+  {q:"What is the key difference between tarot and oracle card decks?",opts:["Tarot has more cards","Oracle cards are always larger","Tarot has a fixed 78-card structure; oracle has no fixed rules","Oracle cards can only be used for positive readings"],ans:2},
+  {q:"In astrology, your Rising Sign (Ascendant) represents:",opts:["Your emotional inner world","Your core identity and life purpose","How others perceive you and the energy you lead with","Your relationship with money and material things"],ans:2},
+  {q:"Which of these is the BEST platform for a new spiritual maker selling handmade crystal jewellery?",opts:["LinkedIn","Etsy","Pinterest","Snapchat"],ans:1},
+  {q:"What does the 4-7-8 breathing technique involve?",opts:["Inhale 4 counts, hold 7, exhale 8","4 minutes of deep breathing, 7 days a week","Inhale 7 counts, hold 4, exhale 8","4 breath cycles, 7 times, 8 seconds each"],ans:0},
+];
+
+/* ══════════════════════════════════════════
+   HELPER: format bold/italic text
+══════════════════════════════════════════ */
+function FmtText({text}){
+  const lines=text.split("\n");
+  return(<>{lines.map((line,i)=>{
+    const html=line.replace(/\*\*(.+?)\*\*/g,'<strong style="color:#e2c9ff">$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>');
+    return(<span key={i}><span dangerouslySetInnerHTML={{__html:html}}/>{i<lines.length-1&&<br/>}</span>);
+  })}</>);
+}
+
+/* ══════════════════════════════════════════
+   MAIN APP
+══════════════════════════════════════════ */
+function App(){
+  const [screen,setScreen]=useState("home"); // home | learn | simulate | quiz
+  const [persona,setPersona]=useState(null);
+  return(
+    <div style={{minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"20px",position:"relative",overflow:"hidden"}}>
+      {STARS.map(s=>(
+        <div key={s.id} style={{position:"fixed",top:`${s.top}%`,left:`${s.left}%`,width:`${s.size}px`,height:`${s.size}px`,borderRadius:"50%",background:"white",opacity:s.op,animation:`twinkle ${s.dur}s ease-in-out infinite alternate`,pointerEvents:"none"}}/>
+      ))}
+      {screen==="home"&&<HomeScreen onSelect={setScreen}/>}
+      {screen==="learn"&&<LearnScreen onBack={()=>setScreen("home")}/>}
+      {screen==="simulate"&&!persona&&<PersonaPicker onPick={p=>{setPersona(p);}} onBack={()=>setScreen("home")}/>}
+      {screen==="simulate"&&persona&&<SimulatorScreen persona={persona} onBack={()=>setPersona(null)} onHome={()=>{setPersona(null);setScreen("home");}}/>}
+      {screen==="quiz"&&<QuizScreen onBack={()=>setScreen("home")}/>}
+    </div>
+  );
+}
+
+/* ── HOME SCREEN ── */
+function HomeScreen({onSelect}){
+  const modes=[
+    {id:"learn",emoji:"📚",title:"Knowledge Hub",desc:"Master crystals, tarot, chakras, astrology & marketplace strategy through guided Q&A with Luna.",badge:"Learn",color:"#a78bfa"},
+    {id:"simulate",emoji:"🎭",title:"Client Simulator",desc:"Practice real conversations with 5 different client archetypes. Get expert feedback after every response.",badge:"Practice",color:"#f472b6"},
+    {id:"quiz",emoji:"✨",title:"Knowledge Quiz",desc:"Test your expertise across 10 questions. Track your score and identify gaps in your knowledge.",badge:"Test",color:"#fbbf24"},
+  ];
+  return(
+    <div className="fade-up" style={{width:"100%",maxWidth:"720px",zIndex:10,textAlign:"center"}}>
+      <div style={{marginBottom:"32px"}}>
+        <div style={{width:"80px",height:"80px",borderRadius:"50%",background:"linear-gradient(135deg,#9b59ff,#c084fc,#f9a8d4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"36px",margin:"0 auto 14px",boxShadow:"0 0 35px rgba(155,89,255,.5)",animation:"pulse 3s ease-in-out infinite"}}>🌙</div>
+        <h1 style={{fontSize:"1.9rem",fontWeight:800,background:"linear-gradient(90deg,#c084fc,#f9a8d4,#93c5fd)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginBottom:"6px"}}>Luna Expert Trainer</h1>
+        <p style={{color:C.muted,fontSize:"0.88rem",letterSpacing:".08em",textTransform:"uppercase"}}>Spirituality Marketplace Training Platform</p>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:"16px",marginBottom:"24px"}}>
+        {modes.map(m=>(
+          <div key={m.id} className="mode-card" onClick={()=>onSelect(m.id)} style={{background:C.card,backdropFilter:"blur(20px)",border:`1px solid ${C.border}`,borderRadius:"20px",padding:"28px 20px",cursor:"pointer",textAlign:"left"}}>
+            <div style={{fontSize:"2rem",marginBottom:"12px"}}>{m.emoji}</div>
+            <span style={{fontSize:"0.7rem",fontWeight:700,textTransform:"uppercase",letterSpacing:".1em",color:m.color,background:`${m.color}22`,padding:"3px 10px",borderRadius:"20px"}}>{m.badge}</span>
+            <h3 style={{marginTop:"10px",marginBottom:"6px",fontSize:"1rem",fontWeight:700,color:"#f0ecff"}}>{m.title}</h3>
+            <p style={{fontSize:"0.8rem",color:C.muted,lineHeight:"1.55"}}>{m.desc}</p>
+          </div>
+        ))}
+      </div>
+      <p style={{fontSize:"0.7rem",color:"rgba(212,184,255,.25)"}}>Luna is an AI training guide. For professional certification, seek accredited programmes. ✨</p>
+    </div>
+  );
+}
+
+/* ── KNOWLEDGE HUB ── */
+function LearnScreen({onBack}){
+  const [msgs,setMsgs]=useState([{role:"luna",text:"📚 Welcome to the **Knowledge Hub**!\n\nAsk me anything about crystals, tarot, chakras, astrology, energy healing, or spiritual marketplace strategy. I'm here to deepen your expertise.\n\nWhat would you like to master today?",id:0}]);
+  const [input,setInput]=useState("");
+  const [typing,setTyping]=useState(false);
+  const [showSug,setShowSug]=useState(true);
+  const bottomRef=useRef(null);
+  const nid=useRef(1);
+  const SUGS=["Best crystals for beginners","How to cleanse crystals","Tarot deck selection guide","The 7 chakras explained","Reiki and energy healing","Marketplace business strategy","Oracle vs Tarot cards","Building a daily meditation practice"];
+  useEffect(()=>{ bottomRef.current?.scrollIntoView({behavior:"smooth"}); },[msgs,typing]);
+  const send=(text)=>{
+    if(!text.trim()||typing) return;
+    setMsgs(p=>[...p,{role:"user",text:text.trim(),id:nid.current++}]);
+    setInput(""); setShowSug(false); setTyping(true);
+    setTimeout(()=>{
+      setMsgs(p=>[...p,{role:"luna",text:getKBAnswer(text),id:nid.current++}]);
+      setTyping(false);
+    },1100+Math.random()*700);
+  };
+  return(
+    <div className="fade-in" style={{width:"100%",maxWidth:"680px",zIndex:10,display:"flex",flexDirection:"column",height:"90vh",maxHeight:"700px"}}>
+      <TopBar title="📚 Knowledge Hub" subtitle="Ask Luna anything" onBack={onBack}/>
+      <div style={{flex:1,overflowY:"auto",padding:"20px",display:"flex",flexDirection:"column",gap:"14px",background:C.card,backdropFilter:"blur(20px)",border:`1px solid ${C.border}`,borderRadius:"0 0 0 0"}}>
+        {msgs.map(m=><ChatBubble key={m.id} msg={m} role="luna"/>)}
+        {typing&&<TypingDots/>}
+        {showSug&&!typing&&<SugChips items={SUGS} onPick={send}/>}
+        <div ref={bottomRef}/>
+      </div>
+      <ChatInput value={input} onChange={setInput} onSend={send} disabled={typing}/>
+    </div>
+  );
+}
+
+/* ── PERSONA PICKER ── */
+function PersonaPicker({onPick,onBack}){
+  return(
+    <div className="fade-in" style={{width:"100%",maxWidth:"680px",zIndex:10}}>
+      <TopBar title="🎭 Client Simulator" subtitle="Choose a client to practice with" onBack={onBack}/>
+      <div style={{background:C.card,backdropFilter:"blur(20px)",border:`1px solid ${C.border}`,borderRadius:"0 0 24px 24px",padding:"20px",display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:"12px"}}>
+        {PERSONAS.map(p=>(
+          <div key={p.id} className="persona-card" onClick={()=>onPick(p)} style={{background:"rgba(255,255,255,.04)",border:`1px solid ${C.border}`,borderRadius:"16px",padding:"18px 16px",textAlign:"center"}}>
+            <div style={{fontSize:"2.2rem",marginBottom:"8px"}}>{p.emoji}</div>
+            <h3 style={{fontSize:"0.9rem",fontWeight:700,color:"#f0ecff",marginBottom:"4px"}}>{p.name}</h3>
+            <p style={{fontSize:"0.75rem",color:C.muted,marginBottom:"10px",lineHeight:"1.4"}}>{p.tagline}</p>
+            <span style={{fontSize:"0.68rem",fontWeight:700,textTransform:"uppercase",letterSpacing:".08em",color:p.color,background:`${p.color}22`,padding:"3px 10px",borderRadius:"20px"}}>{p.difficulty}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── SIMULATOR ── */
+function SimulatorScreen({persona,onBack,onHome}){
+  const [msgs,setMsgs]=useState([{role:"client",text:persona.opening,id:0,tip:null}]);
+  const [input,setInput]=useState("");
+  const [typing,setTyping]=useState(false);
+  const [scriptIdx,setScriptIdx]=useState(0);
+  const [done,setDone]=useState(false);
+  const [showTips,setShowTips]=useState(true);
+  const bottomRef=useRef(null);
+  const nid=useRef(1);
+  useEffect(()=>{ bottomRef.current?.scrollIntoView({behavior:"smooth"}); },[msgs,typing]);
+
+  const send=(text)=>{
+    if(!text.trim()||typing||done) return;
+    const userMsg={role:"expert",text:text.trim(),id:nid.current++};
+    setMsgs(p=>[...p,userMsg]);
+    setInput(""); setTyping(true);
+    setTimeout(()=>{
+      const l=text.toLowerCase();
+      const script=persona.script;
+      let matched=null;
+      if(scriptIdx<script.length){
+        const step=script[scriptIdx];
+        if(step.trigger.some(t=>l.includes(t))){ matched=step; setScriptIdx(i=>i+1); }
+        else{ matched=persona.fallback; }
+      } else { setDone(true); }
+      if(matched){
+        setMsgs(p=>[...p,{role:"client",text:matched.client,tip:matched.tip,id:nid.current++}]);
+      } else {
+        setMsgs(p=>[...p,{role:"client",text:"Thank you so much — this has been incredibly helpful. I feel confident moving forward! 🙏",tip:"Excellent session! You successfully guided the client through the full conversation arc. This is the kind of expertise that builds lasting client relationships.",id:nid.current++}]);
+      }
+      setTyping(false);
+    },1200+Math.random()*600);
+  };
+
+  const progress=Math.min(100,Math.round((scriptIdx/persona.script.length)*100));
+
+  return(
+    <div className="fade-in" style={{width:"100%",maxWidth:"680px",zIndex:10,display:"flex",flexDirection:"column",height:"90vh",maxHeight:"720px"}}>
+      {/* header */}
+      <div style={{background:C.card,backdropFilter:"blur(20px)",border:`1px solid ${C.border}`,borderRadius:"24px 24px 0 0",padding:"14px 20px"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"10px"}}>
+          <button className="btn-ghost" onClick={onBack} style={{background:"rgba(255,255,255,.06)",border:`1px solid ${C.border}`,color:C.muted,borderRadius:"10px",padding:"6px 14px",fontSize:"0.78rem",cursor:"pointer"}}>← Personas</button>
+          <div style={{textAlign:"center"}}>
+            <div style={{fontSize:"0.85rem",fontWeight:700,color:"#f0ecff"}}>{persona.emoji} {persona.name}</div>
+            <div style={{fontSize:"0.72rem",color:C.muted}}>{persona.tagline}</div>
+          </div>
+          <button className="btn-ghost" onClick={()=>setShowTips(t=>!t)} style={{background:"rgba(255,255,255,.06)",border:`1px solid ${C.border}`,color:showTips?"#fbbf24":C.muted,borderRadius:"10px",padding:"6px 12px",fontSize:"0.78rem",cursor:"pointer"}}>💡 Tips {showTips?"ON":"OFF"}</button>
+        </div>
+        {/* progress */}
+        <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+          <div style={{flex:1,height:"5px",background:"rgba(255,255,255,.08)",borderRadius:"10px",overflow:"hidden"}}>
+            <div style={{width:`${progress}%`,height:"100%",background:`linear-gradient(90deg,${C.purple},${C.lavender})`,borderRadius:"10px",transition:"width .5s ease"}}/>
+          </div>
+          <span style={{fontSize:"0.72rem",color:C.muted,flexShrink:0}}>{progress}% complete</span>
+        </div>
+      </div>
+      {/* messages */}
+      <div style={{flex:1,overflowY:"auto",padding:"16px 20px",display:"flex",flexDirection:"column",gap:"14px",background:"rgba(13,8,32,.6)",backdropFilter:"blur(16px)",borderLeft:`1px solid ${C.border}`,borderRight:`1px solid ${C.border}`}}>
+        {/* legend */}
+        <div style={{display:"flex",gap:"16px",padding:"8px 12px",background:"rgba(255,255,255,.04)",borderRadius:"10px",fontSize:"0.72rem",color:C.muted}}>
+          <span><span style={{color:persona.color}}>●</span> Client ({persona.name})</span>
+          <span><span style={{color:"#93c5fd"}}>●</span> You (Expert)</span>
+          {showTips&&<span><span style={{color:"#fbbf24"}}>●</span> Expert Tip</span>}
+        </div>
+        {msgs.map(m=>(
+          <div key={m.id} className="slide-in">
+            {m.role==="client"&&(
+              <div style={{display:"flex",gap:"10px",alignItems:"flex-start"}}>
+                <div style={{width:"32px",height:"32px",borderRadius:"50%",background:`${persona.color}33`,border:`1px solid ${persona.color}66`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"14px",flexShrink:0,marginTop:"2px"}}>{persona.emoji}</div>
+                <div style={{flex:1}}>
+                  <div style={{background:"rgba(255,255,255,.06)",border:`1px solid rgba(255,255,255,.1)`,borderRadius:"4px 16px 16px 16px",padding:"12px 16px",fontSize:"0.875rem",lineHeight:"1.6",color:"#f0ecff",marginBottom: showTips&&m.tip?"8px":"0"}}>{m.text}</div>
+                  {showTips&&m.tip&&(
+                    <div className="pop" style={{background:C.feedback,border:`1px solid ${C.feedbackBorder}`,borderRadius:"10px",padding:"10px 14px",fontSize:"0.78rem",lineHeight:"1.55",color:"#fde68a"}}>
+                      💡 <strong>Expert Tip:</strong> {m.tip}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            {m.role==="expert"&&(
+              <div style={{display:"flex",justifyContent:"flex-end"}}>
+                <div style={{maxWidth:"75%",background:"linear-gradient(135deg,rgba(99,102,241,.45),rgba(139,92,246,.4))",border:"1px solid rgba(139,92,246,.35)",borderRadius:"16px 4px 16px 16px",padding:"11px 16px",fontSize:"0.875rem",lineHeight:"1.6",color:"#f0ecff"}}>{m.text}</div>
+              </div>
+            )}
+          </div>
+        ))}
+        {typing&&(
+          <div style={{display:"flex",gap:"10px",alignItems:"center"}}>
+            <div style={{width:"32px",height:"32px",borderRadius:"50%",background:`${persona.color}33`,border:`1px solid ${persona.color}66`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"14px"}}>{persona.emoji}</div>
+            <div style={{padding:"12px 18px",borderRadius:"4px 16px 16px 16px",background:"rgba(255,255,255,.06)",display:"flex",gap:"6px",alignItems:"center"}}>
+              {[0,1,2].map(i=><div key={i} style={{width:"7px",height:"7px",borderRadius:"50%",background:persona.color,animation:`dot 1.2s ease-in-out ${i*.2}s infinite`}}/>)}
+            </div>
+          </div>
+        )}
+        {done&&(
+          <div className="pop" style={{textAlign:"center",padding:"20px",background:"rgba(155,89,255,.12)",border:"1px solid rgba(192,132,252,.3)",borderRadius:"16px"}}>
+            <div style={{fontSize:"2rem",marginBottom:"8px"}}>🎉</div>
+            <div style={{fontWeight:700,color:"#e2c9ff",marginBottom:"4px"}}>Session Complete!</div>
+            <div style={{fontSize:"0.8rem",color:C.muted,marginBottom:"14px"}}>You successfully completed this client scenario.</div>
+            <button className="btn-primary" onClick={onBack} style={{background:"linear-gradient(135deg,#9b59ff,#c084fc)",border:"none",color:"white",padding:"8px 20px",borderRadius:"12px",cursor:"pointer",fontSize:"0.82rem",fontWeight:600}}>Try Another Client →</button>
+          </div>
+        )}
+        <div ref={bottomRef}/>
+      </div>
+      {!done&&<ChatInput value={input} onChange={setInput} onSend={send} disabled={typing} placeholder={`Respond as the expert to ${persona.name}…`}/>}
+    </div>
+  );
+}
+
+/* ── QUIZ ── */
+function QuizScreen({onBack}){
+  const [idx,setIdx]=useState(0);
+  const [selected,setSelected]=useState(null);
+  const [confirmed,setConfirmed]=useState(false);
+  const [score,setScore]=useState(0);
+  const [finished,setFinished]=useState(false);
+  const [answers,setAnswers]=useState([]);
+
+  const q=QUIZ[idx];
+  const isCorrect=selected===q.ans;
+
+  const confirm=()=>{
+    if(selected===null) return;
+    setConfirmed(true);
+    if(selected===q.ans) setScore(s=>s+1);
+    setAnswers(a=>[...a,{q:q.q,selected,correct:q.ans,ok:selected===q.ans}]);
+  };
+  const next=()=>{
+    if(idx<QUIZ.length-1){ setIdx(i=>i+1); setSelected(null); setConfirmed(false); }
+    else setFinished(true);
+  };
+
+  const pct=Math.round((score/QUIZ.length)*100);
+  const grade=pct>=90?"🏆 Expert":pct>=70?"⭐ Proficient":pct>=50?"📚 Developing":"🌱 Keep Studying";
+
+  if(finished) return(
+    <div className="fade-up" style={{width:"100%",maxWidth:"560px",zIndex:10,textAlign:"center"}}>
+      <div style={{background:C.card,backdropFilter:"blur(20px)",border:`1px solid ${C.border}`,borderRadius:"24px",padding:"36px 30px"}}>
+        <div style={{fontSize:"3rem",marginBottom:"12px"}}>{pct>=70?"🎉":"📖"}</div>
+        <h2 style={{fontWeight:800,fontSize:"1.5rem",color:"#f0ecff",marginBottom:"6px"}}>{grade}</h2>
+        <div style={{fontSize:"2.5rem",fontWeight:800,background:"linear-gradient(90deg,#c084fc,#f9a8d4)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginBottom:"4px"}}>{score}/{QUIZ.length}</div>
+        <p style={{color:C.muted,fontSize:"0.85rem",marginBottom:"24px"}}>{pct}% correct</p>
+        <div style={{textAlign:"left",marginBottom:"24px",display:"flex",flexDirection:"column",gap:"8px"}}>
+          {answers.map((a,i)=>(
+            <div key={i} style={{display:"flex",gap:"10px",alignItems:"flex-start",padding:"8px 12px",background:a.ok?"rgba(74,222,128,.08)":"rgba(248,113,113,.08)",border:`1px solid ${a.ok?"rgba(74,222,128,.25)":"rgba(248,113,113,.25)"}`,borderRadius:"10px",fontSize:"0.78rem"}}>
+              <span style={{fontSize:"1rem",flexShrink:0}}>{a.ok?"✅":"❌"}</span>
+              <div>
+                <div style={{color:"#f0ecff",marginBottom:"2px"}}>{a.q}</div>
+                {!a.ok&&<div style={{color:"rgba(248,113,113,.9)"}}>Your answer: <em>{QUIZ[i].opts[a.selected]}</em> — Correct: <strong style={{color:"rgba(74,222,128,.9)"}}>{QUIZ[i].opts[a.correct]}</strong></div>}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{display:"flex",gap:"12px",justifyContent:"center"}}>
+          <button className="btn-ghost" onClick={()=>{setIdx(0);setSelected(null);setConfirmed(false);setScore(0);setFinished(false);setAnswers([]);}} style={{background:"rgba(255,255,255,.06)",border:`1px solid ${C.border}`,color:C.muted,borderRadius:"12px",padding:"10px 20px",fontSize:"0.82rem",cursor:"pointer"}}>Retake Quiz</button>
+          <button className="btn-primary" onClick={onBack} style={{background:"linear-gradient(135deg,#9b59ff,#c084fc)",border:"none",color:"white",padding:"10px 20px",borderRadius:"12px",cursor:"pointer",fontSize:"0.82rem",fontWeight:600}}>Back to Home</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  return(
+    <div className="fade-in" style={{width:"100%",maxWidth:"560px",zIndex:10}}>
+      <TopBar title="✨ Knowledge Quiz" subtitle={`Question ${idx+1} of ${QUIZ.length}`} onBack={onBack}/>
+      <div style={{background:C.card,backdropFilter:"blur(20px)",border:`1px solid ${C.border}`,borderRadius:"0 0 24px 24px",padding:"24px"}}>
+        {/* progress */}
+        <div style={{height:"4px",background:"rgba(255,255,255,.08)",borderRadius:"10px",marginBottom:"20px",overflow:"hidden"}}>
+          <div style={{width:`${((idx)/QUIZ.length)*100}%`,height:"100%",background:`linear-gradient(90deg,${C.purple},${C.lavender})`,borderRadius:"10px",transition:"width .4s"}}/>
+        </div>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:"20px",fontSize:"0.8rem",color:C.muted}}>
+          <span>Score: <strong style={{color:"#a78bfa"}}>{score}</strong></span>
+          <span style={{color:"#a78bfa",fontWeight:600}}>Q{idx+1}/{QUIZ.length}</span>
+        </div>
+        <h3 style={{fontWeight:700,fontSize:"1rem",lineHeight:"1.55",color:"#f0ecff",marginBottom:"18px"}}>{q.q}</h3>
+        <div style={{display:"flex",flexDirection:"column",gap:"10px",marginBottom:"20px"}}>
+          {q.opts.map((opt,i)=>{
+            let bg="rgba(255,255,255,.05)",border=C.border,color="#e8dff5";
+            if(selected===i&&!confirmed){bg="rgba(155,89,255,.2)";border="rgba(192,132,252,.6)";}
+            if(confirmed&&i===q.ans){bg="rgba(74,222,128,.15)";border="rgba(74,222,128,.5)";color="#86efac";}
+            if(confirmed&&i===selected&&i!==q.ans){bg="rgba(248,113,113,.15)";border="rgba(248,113,113,.5)";color="#fca5a5";}
+            return(
+              <div key={i} className={!confirmed?"quiz-opt":""} onClick={()=>!confirmed&&setSelected(i)} style={{padding:"12px 16px",borderRadius:"12px",background:bg,border:`1px solid ${border}`,color,fontSize:"0.875rem",lineHeight:"1.45",cursor:confirmed?"default":"pointer",display:"flex",alignItems:"center",gap:"10px"}}>
+                <span style={{width:"22px",height:"22px",borderRadius:"50%",background:"rgba(255,255,255,.07)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.75rem",flexShrink:0,fontWeight:700}}>
+                  {confirmed&&i===q.ans?"✓":confirmed&&i===selected&&i!==q.ans?"✗":String.fromCharCode(65+i)}
+                </span>
+                {opt}
+              </div>
+            );
+          })}
+        </div>
+        {!confirmed?(
+          <button className="btn-primary" onClick={confirm} disabled={selected===null} style={{width:"100%",padding:"12px",borderRadius:"14px",border:"none",background:selected!==null?"linear-gradient(135deg,#9b59ff,#c084fc)":"rgba(155,89,255,.2)",color:selected!==null?"white":"rgba(212,184,255,.4)",fontSize:"0.9rem",fontWeight:600,cursor:selected!==null?"pointer":"default"}}>Check Answer</button>
+        ):(
+          <button className="btn-primary" onClick={next} style={{width:"100%",padding:"12px",borderRadius:"14px",border:"none",background:"linear-gradient(135deg,#9b59ff,#c084fc)",color:"white",fontSize:"0.9rem",fontWeight:600,cursor:"pointer"}}>
+            {idx<QUIZ.length-1?"Next Question →":"See Results 🎉"}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── SHARED COMPONENTS ── */
+function TopBar({title,subtitle,onBack}){
+  return(
+    <div style={{background:C.card,backdropFilter:"blur(20px)",border:`1px solid ${C.border}`,borderBottom:"none",borderRadius:"24px 24px 0 0",padding:"14px 20px",display:"flex",alignItems:"center",gap:"14px"}}>
+      <button className="btn-ghost" onClick={onBack} style={{background:"rgba(255,255,255,.06)",border:`1px solid ${C.border}`,color:C.muted,borderRadius:"10px",padding:"6px 14px",fontSize:"0.78rem",cursor:"pointer",flexShrink:0}}>← Home</button>
+      <div>
+        <div style={{fontWeight:700,color:"#f0ecff",fontSize:"0.95rem"}}>{title}</div>
+        <div style={{fontSize:"0.72rem",color:C.muted}}>{subtitle}</div>
+      </div>
+    </div>
+  );
+}
+
+function ChatBubble({msg}){
+  const isLuna=msg.role==="luna";
+  return(
+    <div className="slide-in" style={{display:"flex",justifyContent:isLuna?"flex-start":"flex-end"}}>
+      {isLuna&&<div style={{width:"32px",height:"32px",borderRadius:"50%",background:"linear-gradient(135deg,#9b59ff,#c084fc)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"14px",flexShrink:0,marginRight:"10px",marginTop:"2px",boxShadow:"0 0 12px rgba(155,89,255,.4)"}}>🌙</div>}
+      <div style={{maxWidth:"78%",padding:isLuna?"13px 17px":"10px 16px",borderRadius:isLuna?"4px 16px 16px 16px":"16px 4px 16px 16px",background:isLuna?"linear-gradient(135deg,rgba(155,89,255,.14),rgba(192,132,252,.08))":"linear-gradient(135deg,rgba(99,102,241,.45),rgba(139,92,246,.4))",border:isLuna?`1px solid ${C.border}`:"1px solid rgba(139,92,246,.35)",fontSize:"0.875rem",lineHeight:"1.65",color:isLuna?"#e8dff5":"#f0ecff"}}>
+        <FmtText text={msg.text}/>
+      </div>
+    </div>
+  );
+}
+
+function TypingDots(){
+  return(
+    <div style={{display:"flex",gap:"10px",alignItems:"center"}}>
+      <div style={{width:"32px",height:"32px",borderRadius:"50%",background:"linear-gradient(135deg,#9b59ff,#c084fc)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"14px"}}>🌙</div>
+      <div style={{padding:"12px 18px",borderRadius:"4px 16px 16px 16px",background:"rgba(155,89,255,.1)",border:`1px solid ${C.border}`,display:"flex",gap:"6px",alignItems:"center"}}>
+        {[0,1,2].map(i=><div key={i} style={{width:"7px",height:"7px",borderRadius:"50%",background:"#c084fc",animation:`dot 1.2s ease-in-out ${i*.2}s infinite`}}/>)}
+      </div>
+    </div>
+  );
+}
+
+function SugChips({items,onPick}){
+  return(
+    <div style={{display:"flex",flexWrap:"wrap",gap:"8px",marginTop:"4px"}}>
+      {items.map((p,i)=>(
+        <button key={i} onClick={()=>onPick(p)} style={{padding:"7px 14px",borderRadius:"20px",fontSize:"0.77rem",cursor:"pointer",background:"rgba(155,89,255,.15)",border:"1px solid rgba(180,130,255,.3)",color:"#d4b8ff",fontFamily:"inherit",transition:"all .2s"}}
+          onMouseOver={e=>{e.target.style.background="rgba(180,130,255,.25)";e.target.style.transform="translateY(-1px)"}}
+          onMouseOut={e=>{e.target.style.background="rgba(155,89,255,.15)";e.target.style.transform="translateY(0)"}}>{p}</button>
+      ))}
+    </div>
+  );
+}
+
+function ChatInput({value,onChange,onSend,disabled,placeholder}){
+  const handleKey=(e)=>{ if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();onSend(value);} };
+  return(
+    <div style={{background:C.card,backdropFilter:"blur(20px)",border:`1px solid ${C.border}`,borderTop:"none",borderRadius:"0 0 24px 24px",padding:"14px 18px",display:"flex",gap:"10px",alignItems:"flex-end"}}>
+      <textarea rows={1} value={value} onChange={e=>onChange(e.target.value)} onKeyDown={handleKey}
+        placeholder={placeholder||"Type your message… (Enter to send)"}
+        style={{flex:1,resize:"none",background:"rgba(255,255,255,.05)",border:`1px solid rgba(180,130,255,.25)`,borderRadius:"14px",padding:"10px 15px",color:"#e8dff5",fontSize:"0.875rem",fontFamily:"inherit",lineHeight:"1.5",maxHeight:"100px",overflowY:"auto"}}/>
+      <button onClick={()=>onSend(value)} disabled={disabled||!value.trim()}
+        style={{width:"42px",height:"42px",borderRadius:"50%",border:"none",cursor:value.trim()&&!disabled?"pointer":"default",background:value.trim()&&!disabled?"linear-gradient(135deg,#9b59ff,#c084fc)":"rgba(155,89,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"18px",flexShrink:0,boxShadow:value.trim()&&!disabled?"0 0 18px rgba(155,89,255,.4)":"none",transition:"all .2s"}}>✦</button>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
